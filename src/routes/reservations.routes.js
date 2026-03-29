@@ -1,4 +1,3 @@
-// src/routes/reservations.routes.js
 import express from "express";
 import pool from "../db/pool.js";
 import { logEvent } from "../services/log.service.js";
@@ -7,10 +6,8 @@ const router = express.Router();
 
 /* =====================================================
    CREATE
-   POST /api/reservations
 ===================================================== */
 router.post("/", async (req, res) => {
-  const actorUserId = null;
 
   const {
     resourceId,
@@ -22,7 +19,8 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   try {
-    const insertSql = `
+
+    const sql = `
       INSERT INTO reservations
       (resource_id, user_id, start_time, end_time, note, status)
       VALUES ($1, $2, $3, $4, $5, $6)
@@ -38,10 +36,10 @@ router.post("/", async (req, res) => {
       status || "active"
     ];
 
-    const { rows } = await pool.query(insertSql, params);
+    const { rows } = await pool.query(sql, params);
 
     await logEvent({
-      actorUserId,
+      actorUserId: Number(userId),
       action: "reserve",
       message: `Reservation created (ID ${rows[0].id})`,
       entityType: "reservation",
@@ -59,10 +57,8 @@ router.post("/", async (req, res) => {
 
 /* =====================================================
    READ ALL
-   GET /api/reservations
 ===================================================== */
 router.get("/", async (req, res) => {
-
   try {
 
     const sql = `
@@ -84,54 +80,11 @@ router.get("/", async (req, res) => {
     console.error("READ ALL failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
-
-});
-
-
-/* =====================================================
-   READ ONE
-   GET /api/reservations/:id
-===================================================== */
-router.get("/:id", async (req, res) => {
-
-  const id = Number(req.params.id);
-
-  if (isNaN(id)) {
-    return res.status(400).json({ ok: false, error: "Invalid ID" });
-  }
-
-  try {
-
-    const sql = `
-      SELECT
-        r.*,
-        u.email AS user_email,
-        res.name AS resource_name
-      FROM reservations r
-      JOIN users u ON r.user_id = u.id
-      JOIN resources res ON r.resource_id = res.id
-      WHERE r.id = $1
-    `;
-
-    const { rows } = await pool.query(sql, [id]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ ok: false, error: "Reservation not found" });
-    }
-
-    return res.status(200).json({ ok: true, data: rows[0] });
-
-  } catch (err) {
-    console.error("READ ONE failed:", err);
-    return res.status(500).json({ ok: false, error: "Database error" });
-  }
-
 });
 
 
 /* =====================================================
    UPDATE
-   PUT /api/reservations/:id
 ===================================================== */
 router.put("/:id", async (req, res) => {
 
@@ -140,8 +93,6 @@ router.put("/:id", async (req, res) => {
   if (isNaN(id)) {
     return res.status(400).json({ ok: false, error: "Invalid ID" });
   }
-
-  const actorUserId = null;
 
   const {
     resourceId,
@@ -178,12 +129,12 @@ router.put("/:id", async (req, res) => {
 
     const { rows } = await pool.query(sql, params);
 
-    if (rows.length === 0) {
+    if (!rows.length) {
       return res.status(404).json({ ok: false, error: "Reservation not found" });
     }
 
     await logEvent({
-      actorUserId,
+      actorUserId: Number(userId),
       action: "reserve",
       message: `Reservation updated (ID ${id})`,
       entityType: "reservation",
@@ -196,13 +147,11 @@ router.put("/:id", async (req, res) => {
     console.error("UPDATE failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
-
 });
 
 
 /* =====================================================
    DELETE
-   DELETE /api/reservations/:id
 ===================================================== */
 router.delete("/:id", async (req, res) => {
 
@@ -211,8 +160,6 @@ router.delete("/:id", async (req, res) => {
   if (isNaN(id)) {
     return res.status(400).json({ ok: false, error: "Invalid ID" });
   }
-
-  const actorUserId = null;
 
   try {
 
@@ -225,22 +172,12 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ ok: false, error: "Reservation not found" });
     }
 
-    await logEvent({
-      actorUserId,
-      action: "reserve",
-      message: `Reservation deleted (ID ${id})`,
-      entityType: "reservation",
-      entityId: id,
-    });
-
     return res.status(204).send();
 
   } catch (err) {
     console.error("DELETE failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
-
 });
-
 
 export default router;

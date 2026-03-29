@@ -1,10 +1,10 @@
-// src/app.js
 import express from "express";
 import resourcesRouter from "./routes/resources.routes.js";
 import reservationsRouter from "./routes/reservations.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,17 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // --- Middleware ---
-app.use(express.json()); // Parse application/json
-
-// Validator debug
-/*app.use((req, _res, next) => {
-  console.log('--- Incoming request --------------------------------');
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log('Headers:', req.headers);
-  console.log('Parsed body:', req.body);
-  console.log('------------------------------------------------------');
-  next();
-});*/
+app.use(express.json());
 
 // Serve everything in ./public as static assets
 const publicDir = path.join(__dirname, "..", "public");
@@ -34,11 +24,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/resources", (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/resources.html'));
+  res.sendFile(path.join(__dirname, "views/resources.html"));
 });
 
 app.get("/reservations", (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/reservations.html'));
+  res.sendFile(path.join(__dirname, "views/reservations.html"));
 });
 
 app.get("/login", (req, res) => {
@@ -71,8 +61,6 @@ app.use("/api", (req, res) => {
 // Frontend 404 (unknown pages)
 // ----------------------------
 app.use((req, res) => {
-  // If you have a dedicated 404.html, prefer that.
-  // Otherwise return a simple message.
   return res.status(404).send("404 - Page not found");
 });
 
@@ -82,7 +70,6 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
 
-  // If a response already started, delegate to Express default handler
   if (res.headersSent) return next(err);
 
   return res.status(500).json({
