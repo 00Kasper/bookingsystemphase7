@@ -11,14 +11,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// --- Middleware ---
 app.use(express.json());
 
-// Serve everything in ./public as static assets
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 
-// --- Views (HTML pages) ---
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
@@ -27,7 +24,7 @@ app.get("/resources", (req, res) => {
   res.sendFile(path.join(__dirname, "views/resources.html"));
 });
 
-app.get("/reservations", (req, res) => {
+app.get("/reservations", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "views/reservations.html"));
 });
 
@@ -39,16 +36,10 @@ app.get("/register", (req, res) => {
   res.sendFile(path.join(publicDir, "register.html"));
 });
 
-// ----------------------------
-// API routes
-// ----------------------------
 app.use("/api/resources", resourcesRouter);
 app.use("/api/reservations", reservationsRouter);
 app.use("/api/auth", authRoutes);
 
-// ----------------------------
-// API 404 (unknown API routes)
-// ----------------------------
 app.use("/api", (req, res) => {
   return res.status(404).json({
     ok: false,
@@ -57,16 +48,10 @@ app.use("/api", (req, res) => {
   });
 });
 
-// ----------------------------
-// Frontend 404 (unknown pages)
-// ----------------------------
 app.use((req, res) => {
   return res.status(404).send("404 - Page not found");
 });
 
-// ----------------------------
-// Central error handler
-// ----------------------------
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
 
