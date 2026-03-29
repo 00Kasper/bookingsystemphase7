@@ -8,7 +8,6 @@ const router = express.Router();
    CREATE
 ===================================================== */
 router.post("/", async (req, res) => {
-
   const {
     resourceId,
     userId,
@@ -19,7 +18,6 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   try {
-
     const sql = `
       INSERT INTO reservations
       (resource_id, user_id, start_time, end_time, note, status)
@@ -47,20 +45,17 @@ router.post("/", async (req, res) => {
     });
 
     return res.status(201).json({ ok: true, data: rows[0] });
-
   } catch (err) {
     console.error("DB insert failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
 });
 
-
 /* =====================================================
    READ ALL
 ===================================================== */
 router.get("/", async (req, res) => {
   try {
-
     const sql = `
       SELECT
         r.*,
@@ -75,19 +70,51 @@ router.get("/", async (req, res) => {
     const { rows } = await pool.query(sql);
 
     return res.status(200).json({ ok: true, data: rows });
-
   } catch (err) {
     console.error("READ ALL failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
 });
 
+/* =====================================================
+   READ ONE
+===================================================== */
+router.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ ok: false, error: "Invalid ID" });
+  }
+
+  try {
+    const sql = `
+      SELECT
+        r.*,
+        u.email AS user_email,
+        res.name AS resource_name
+      FROM reservations r
+      JOIN users u ON r.user_id = u.id
+      JOIN resources res ON r.resource_id = res.id
+      WHERE r.id = $1
+    `;
+
+    const { rows } = await pool.query(sql, [id]);
+
+    if (!rows.length) {
+      return res.status(404).json({ ok: false, error: "Reservation not found" });
+    }
+
+    return res.status(200).json({ ok: true, data: rows[0] });
+  } catch (err) {
+    console.error("READ ONE failed:", err);
+    return res.status(500).json({ ok: false, error: "Database error" });
+  }
+});
 
 /* =====================================================
    UPDATE
 ===================================================== */
 router.put("/:id", async (req, res) => {
-
   const id = Number(req.params.id);
 
   if (isNaN(id)) {
@@ -104,7 +131,6 @@ router.put("/:id", async (req, res) => {
   } = req.body;
 
   try {
-
     const sql = `
       UPDATE reservations
       SET resource_id = $1,
@@ -142,19 +168,16 @@ router.put("/:id", async (req, res) => {
     });
 
     return res.status(200).json({ ok: true, data: rows[0] });
-
   } catch (err) {
     console.error("UPDATE failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });
   }
 });
 
-
 /* =====================================================
    DELETE
 ===================================================== */
 router.delete("/:id", async (req, res) => {
-
   const id = Number(req.params.id);
 
   if (isNaN(id)) {
@@ -162,7 +185,6 @@ router.delete("/:id", async (req, res) => {
   }
 
   try {
-
     const { rowCount } = await pool.query(
       "DELETE FROM reservations WHERE id = $1",
       [id]
@@ -173,7 +195,6 @@ router.delete("/:id", async (req, res) => {
     }
 
     return res.status(204).send();
-
   } catch (err) {
     console.error("DELETE failed:", err);
     return res.status(500).json({ ok: false, error: "Database error" });

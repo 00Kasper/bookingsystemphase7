@@ -21,11 +21,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/resources", (req, res) => {
-  res.sendFile(path.join(__dirname, "views/resources.html"));
+  res.sendFile(path.join(__dirname, "views", "resources.html"));
 });
 
-app.get("/reservations", requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, "views/reservations.html"));
+app.get("/reservations", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "reservations.html"));
 });
 
 app.get("/login", (req, res) => {
@@ -37,7 +37,7 @@ app.get("/register", (req, res) => {
 });
 
 app.use("/api/resources", resourcesRouter);
-app.use("/api/reservations", reservationsRouter);
+app.use("/api/reservations", requireAuth, reservationsRouter);
 app.use("/api/auth", authRoutes);
 
 app.use("/api", (req, res) => {
